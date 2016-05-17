@@ -13,7 +13,7 @@ Create a `DemoHandler` class as below:
 public class DemoHandler {
 
 	@Command
-	public static void hello() {
+	public void hello() {
 
 		System.out.println("Hello World!");
 
@@ -62,7 +62,7 @@ Hello World!
 >>
 ```
 
-(:l is an internal command used to list available commands.)
+(`:l` is an internal command used to list available commands.)
 
 ## Command Arguments
 
