@@ -1,17 +1,12 @@
 package net.xprova.piccolo;
 
-import java.lang.reflect.InvocationTargetException;
-
-/**
- * Hello world!
- *
- */
 public class App {
 
-	public static void main(String[] args)
-			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		
-		(new Console(TestHandler.class)).run();
+	public static void main(String[] args) {
+
+		Console c = new Console().addHandler(new TestHandler());
+
+		c.run();
 
 	}
 }
