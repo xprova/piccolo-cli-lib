@@ -2,40 +2,48 @@ package net.xprova.piccolo;
 
 public class TestHandler {
 
-	@Command(description = "performs impressive arithmetic")
-	public static void cal(String[] arr) {
-
-		System.out.println("3 x 5 = 15");
-
-	}
-
 	@Command(description = "prints Hello!")
-	public static void hello(String[] arr) {
+	public void hello() {
 
 		System.out.println("Hello!");
 
 	}
 
-	@Command(description = "counts from 1 to 10")
-	public static void count(String[] arr) {
+	@Command(description = "counts from 1 to n")
+	public void count(int n) {
 
-		for (int i = 1; i < 11; i++) {
+		for (int i = 1; i <= n; i++) {
 
-			System.out.printf("%d out of %d ...\n", i, 10);
+			System.out.printf("%d out of %d ...\n", i, n);
 
 		}
 
 	}
 
 	@Command(description = "raises an Exception")
-	public static void fail(String[] arr) {
+	public void div(int a, int b) {
 
-		int a = 1;
+		System.out.printf("%d / %d = %d\n", a, b, a / b);
 
-		int b = 0;
+	}
 
-		System.out.println("result = " + (a/b));
+	@Command
+	public void countargs(String[] args) {
 
+		System.out.println("I received " + args.length + " arguments");
+
+	}
+
+	@Command
+	public void sum(int a, int b) {
+
+		System.out.printf("%d + %d = %d\n", a, b, a + b);
+	}
+
+	@Command
+	public void not(boolean x) {
+
+		System.out.println(!x);
 	}
 
 }

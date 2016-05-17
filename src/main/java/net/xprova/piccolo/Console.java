@@ -2,8 +2,10 @@ package net.xprova.piccolo;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,9 +20,12 @@ public class Console {
 	private String banner;
 	private String prompt;
 	private int exitFlag;
+	private PrintStream out;
 
 	private HashSet<MethodData> availMethods;
 	private HashMap<String, MethodData> methodAliases;
+
+	private HashSet<Object> handlers;
 
 	private class MethodData {
 
@@ -34,8 +39,9 @@ public class Console {
 
 	};
 
-	private HashSet<Object> handlers;
-
+	/**
+	 * Constructors
+	 */
 	public Console() {
 
 		methodAliases = new HashMap<String, MethodData>();
@@ -43,6 +49,8 @@ public class Console {
 		availMethods = new HashSet<Console.MethodData>();
 
 		handlers = new HashSet<Object>();
+
+		out = System.out;
 
 		// load banner
 
@@ -75,6 +83,12 @@ public class Console {
 
 	}
 
+	/**
+	 * Add a handler class to the console
+	 *
+	 * @param handler
+	 * @return same Console object for chaining
+	 */
 	public Console addHandler(Object handler) {
 
 		handlers.add(handler);
@@ -84,6 +98,12 @@ public class Console {
 		return this;
 	}
 
+	/**
+	 * Remove handler class from the console
+	 *
+	 * @param handler
+	 * @return same Console object for chaining
+	 */
 	public Console removeHandler(@SuppressWarnings("rawtypes") Class handler) {
 
 		handlers.remove(handler);
@@ -93,6 +113,12 @@ public class Console {
 		return this;
 	}
 
+	/**
+	 * Set console banner
+	 *
+	 * @param newBanner
+	 * @return same Console object for chaining
+	 */
 	public Console setBanner(String newBanner) {
 
 		banner = newBanner;
@@ -101,6 +127,12 @@ public class Console {
 
 	}
 
+	/**
+	 * Set console prompt
+	 *
+	 * @param newPrompt
+	 * @return same Console object for chaining
+	 */
 	public Console setPrompt(String newPrompt) {
 
 		prompt = newPrompt;
@@ -109,32 +141,31 @@ public class Console {
 
 	}
 
+	/**
+	 * Start the console
+	 */
 	public void run() {
 
 		try {
 
 			ConsoleReader console = new ConsoleReader();
 
-			System.out.println(banner);
+			out.println(banner);
 
 			console.setPrompt(prompt);
 
-			String cmd = null;
+			String line = null;
 
 			exitFlag = 0;
 
-			while ((cmd = console.readLine()) != null) {
+			while ((line = console.readLine()) != null) {
 
-				if (!runMethod(cmd)) {
-
-					System.out.printf("%s: command not found\n", cmd);
-
-				}
+				runCommand(line);
 
 				if (exitFlag != 0)
 					break;
 
-				System.out.println(""); // new line after each command
+				out.println(""); // new line after each command
 
 			}
 
@@ -155,7 +186,36 @@ public class Console {
 		}
 	}
 
-	public boolean runMethod(String methodAlias) {
+	/**
+	 * Run a console command
+	 *
+	 * @param line
+	 *            string containing both command name and arguments, separated
+	 *            by spaces
+	 * @return true if the command runs successfully and false otherwise
+	 */
+	public boolean runCommand(String line) {
+
+		String[] parts = line.split(" ");
+
+		String cmd = parts[0];
+
+		String[] args = Arrays.copyOfRange(parts, 1, parts.length);
+
+		return runCommand(cmd, args);
+
+	}
+
+	/**
+	 * Runs a console command
+	 *
+	 * @param methodAlias
+	 *            command (method) name
+	 * @param args
+	 *            command arguments
+	 * @return true if the command runs successfully and false otherwise
+	 */
+	public boolean runCommand(String methodAlias, String args[]) {
 
 		MethodData methodData = methodAliases.get(methodAlias);
 
@@ -167,7 +227,9 @@ public class Console {
 
 			try {
 
-				methodData.method.invoke(methodData.object, new Object[] { new String[] {} });
+				smartInvoke(methodData.method, methodData.object, args);
+
+				return true;
 
 			} catch (Exception e) {
 
@@ -183,12 +245,15 @@ public class Console {
 
 	}
 
-	/*
-	 * returns a list of command aliases for a method annotated with Command
+	/**
+	 * Return a list of command aliases for a method annotated with Command
 	 *
+	 * <p>
 	 * If any aliases are defined in the Command annotation then these are
 	 * returned. Otherwise the method name is returned as the only alias.
 	 *
+	 * @param method
+	 * @return
 	 */
 	private ArrayList<String> getCommandNames(Method method) {
 
@@ -267,8 +332,190 @@ public class Console {
 
 	}
 
+	/*
+	 * this function returns true when `method` has 1 parameter and of the type
+	 * String[]
+	 */
+	private boolean isMethodGeneric(Method method) {
+
+		@SuppressWarnings("rawtypes")
+		Class[] parameterTypes = method.getParameterTypes();
+
+		if (parameterTypes.length == 1) {
+
+			boolean isArr = parameterTypes[0].isArray();
+
+			boolean isCompString = parameterTypes[0].getComponentType() == String.class;
+
+			return isArr && isCompString;
+
+		} else {
+
+			return false;
+		}
+
+	}
+
+	/*
+	 * return true if command executes successfully and false otherwise
+	 */
+	private boolean smartInvoke(Method method, Object object, String[] args) throws Exception {
+
+		Object[] noargs = new Object[] { new String[] {} };
+
+		int nArgs = args.length;
+
+		Class<?>[] paramTypes = method.getParameterTypes();
+
+		int nMethodArgs = paramTypes.length;
+
+		// determine type of invocation
+
+		if (nMethodArgs == 0) {
+
+			if (nArgs == 0) {
+
+				// simple case, invoke with no parameters
+
+				method.invoke(object);
+
+				return true;
+
+			} else {
+
+				printParameters(method);
+
+				return false;
+
+			}
+
+		} else if (nMethodArgs == 1 && isMethodGeneric(method)) {
+
+			// this method takes one parameter of type String[] that
+			// contains all user parameters
+
+			if (nArgs == 0) {
+
+				// user supplied no parameters
+
+				method.invoke(object, noargs);
+
+				return true;
+
+			} else {
+
+				// user supplied 1+ parameters
+
+				method.invoke(object, new Object[] { args });
+
+				return true;
+
+			}
+
+		} else if (nMethodArgs == nArgs) {
+
+			// the method accepts several parameters, attempt to convert
+			// parameters to the correct types and pass them to the method
+
+			ArrayList<Object> objs = new ArrayList<Object>();
+
+			try {
+
+				for (int i = 0; i < paramTypes.length; i++) {
+
+					objs.add(toObject(paramTypes[i], args[i]));
+
+				}
+
+			} catch (Exception e) {
+
+				out.println("Unable to parse parameters");
+
+				printParameters(method);
+
+				return false;
+
+			}
+
+			Object[] objsArr = objs.toArray();
+
+			method.invoke(object, objsArr);
+
+			return true;
+
+		} else {
+
+			out.printf("command <%s> requires %d parameter(s) (%d supplied)", method.getName(), nMethodArgs, nArgs);
+
+			return false;
+
+		}
+
+	}
+
+	private static Object toObject(@SuppressWarnings("rawtypes") Class clazz, String value) throws Exception {
+
+		if (Boolean.class == clazz || Boolean.TYPE == clazz)
+			return Boolean.parseBoolean(value);
+
+		if (Byte.class == clazz || Byte.TYPE == clazz)
+			return Byte.parseByte(value);
+
+		if (Short.class == clazz || Short.TYPE == clazz)
+			return Short.parseShort(value);
+
+		if (Integer.class == clazz || Integer.TYPE == clazz)
+			return Integer.parseInt(value);
+
+		if (Long.class == clazz || Long.TYPE == clazz)
+			return Long.parseLong(value);
+
+		if (Float.class == clazz || Float.TYPE == clazz)
+			return Float.parseFloat(value);
+
+		if (Double.class == clazz || Double.TYPE == clazz)
+			return Double.parseDouble(value);
+
+		throw new Exception("Attempted to parse non-primitive type");
+	}
+
+	private void printParameters(Method method) {
+
+		Class<?>[] paramTypes = method.getParameterTypes();
+
+		if (paramTypes.length == 0) {
+
+			out.printf("command <%s> takes no parameters\n", method.getName());
+
+		} else if (paramTypes.length == 1) {
+
+			out.printf("command <%s> takes <%s> parameter(s)\n", method.getName(), paramTypes[0].getName());
+
+		} else {
+
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("command <" + method.getName() + "> takes <");
+
+			sb.append(paramTypes[0].getName());
+
+			int j = paramTypes.length;
+
+			for (int i = 1; i < j - 1; i++) {
+
+				sb.append(", " + paramTypes[i].getName());
+
+			}
+
+			sb.append(paramTypes[j].getName() + "> parameters");
+
+			out.println(sb.toString());
+
+		}
+	}
+
 	@Command(aliases = { ":list", ":l" }, description = "lists available commands")
-	public void listMethods(String[] dummy) {
+	private void listMethods(String[] args) {
 
 		List<String> resultList = new ArrayList<String>();
 
@@ -284,7 +531,7 @@ public class Console {
 
 				int j = methodNames.size() - 1;
 
-				for (int i = 2; i < j - 1; i++) {
+				for (int i = 1; i < j; i++) {
 
 					sb.append(methodNames.get(i)).append(", ");
 
@@ -300,11 +547,11 @@ public class Console {
 
 		Collections.sort(resultList);
 
-		System.out.printf("There are %d available commands:\n", resultList.size());
+		out.printf("There are %d available commands:\n", resultList.size());
 
 		for (String methodName : resultList) {
 
-			System.out.println(methodName);
+			out.println(methodName);
 
 		}
 
