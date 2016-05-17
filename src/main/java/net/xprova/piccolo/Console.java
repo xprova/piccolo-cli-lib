@@ -39,6 +39,8 @@ public class Console {
 
 	};
 
+	// public functions
+
 	/**
 	 * Constructors
 	 */
@@ -227,7 +229,7 @@ public class Console {
 
 			try {
 
-				smartInvoke(methodData.method, methodData.object, args);
+				smartInvoke(methodAlias, methodData.method, methodData.object, args);
 
 				return true;
 
@@ -240,6 +242,279 @@ public class Console {
 			}
 
 			return true;
+
+		}
+
+	}
+
+	@Command(aliases = { ":type", ":t" })
+	public boolean getType(String methodAlias) {
+
+		MethodData md = methodAliases.get(methodAlias);
+
+		if (md == null) {
+
+			out.printf("command <%s> does not exist", methodAlias);
+
+			return false;
+
+		} else {
+
+			printParameters(methodAlias, md.method);
+
+			return true;
+		}
+
+	}
+
+	@Command(aliases = { ":quit", ":q" })
+	public boolean exitConsole() {
+
+		exitFlag = 1;
+
+		return true;
+
+	}
+
+	// internal (private) functions
+
+	/*
+	 * this function returns true when `method` has 1 parameter and of the type
+	 * String[]
+	 */
+	private boolean isMethodGeneric(Method method) {
+
+		@SuppressWarnings("rawtypes")
+		Class[] parameterTypes = method.getParameterTypes();
+
+		if (parameterTypes.length == 1) {
+
+			return isStringArray(parameterTypes[0]);
+
+		} else {
+
+			return false;
+		}
+
+	}
+
+	private boolean isStringArray(@SuppressWarnings("rawtypes") Class clazz) {
+
+		boolean isArr = clazz.isArray();
+
+		boolean isCompString = clazz.getComponentType() == String.class;
+
+		return isArr && isCompString;
+
+	}
+
+	/*
+	 * return true if command executes successfully and false otherwise
+	 */
+	private boolean smartInvoke(String usedAlias, Method method, Object object, String[] args) throws Exception {
+
+		Object[] noargs = new Object[] { new String[] {} };
+
+		int nArgs = args.length;
+
+		Class<?>[] paramTypes = method.getParameterTypes();
+
+		int nMethodArgs = paramTypes.length;
+
+		// determine type of invocation
+
+		if (nMethodArgs == 0) {
+
+			if (nArgs == 0) {
+
+				// simple case, invoke with no parameters
+
+				method.invoke(object);
+
+				return true;
+
+			} else {
+
+				printParameters(usedAlias, method);
+
+				return false;
+
+			}
+
+		} else if (nMethodArgs == 1 && isMethodGeneric(method)) {
+
+			// this method takes one parameter of type String[] that
+			// contains all user parameters
+
+			if (nArgs == 0) {
+
+				// user supplied no parameters
+
+				method.invoke(object, noargs);
+
+				return true;
+
+			} else {
+
+				// user supplied 1+ parameters
+
+				method.invoke(object, new Object[] { args });
+
+				return true;
+
+			}
+
+		} else if (nMethodArgs == nArgs) {
+
+			// the method accepts several parameters, attempt to convert
+			// parameters to the correct types and pass them to the method
+
+			ArrayList<Object> objs = new ArrayList<Object>();
+
+			try {
+
+				for (int i = 0; i < paramTypes.length; i++) {
+
+					objs.add(toObject(paramTypes[i], args[i]));
+
+				}
+
+			} catch (Exception e) {
+
+				out.println("Unable to parse parameters");
+
+				printParameters(usedAlias, method);
+
+				return false;
+
+			}
+
+			Object[] objsArr = objs.toArray();
+
+			method.invoke(object, objsArr);
+
+			return true;
+
+		} else {
+
+			out.printf("command <%s> requires %d parameter(s) (%d supplied)", method.getName(), nMethodArgs, nArgs);
+
+			return false;
+
+		}
+
+	}
+
+	private static Object toObject(@SuppressWarnings("rawtypes") Class clazz, String value) throws Exception {
+
+		if (Boolean.class == clazz || Boolean.TYPE == clazz)
+			return Boolean.parseBoolean(value);
+
+		if (Byte.class == clazz || Byte.TYPE == clazz)
+			return Byte.parseByte(value);
+
+		if (Short.class == clazz || Short.TYPE == clazz)
+			return Short.parseShort(value);
+
+		if (Integer.class == clazz || Integer.TYPE == clazz)
+			return Integer.parseInt(value);
+
+		if (Long.class == clazz || Long.TYPE == clazz)
+			return Long.parseLong(value);
+
+		if (Float.class == clazz || Float.TYPE == clazz)
+			return Float.parseFloat(value);
+
+		if (Double.class == clazz || Double.TYPE == clazz)
+			return Double.parseDouble(value);
+
+		if (String.class == clazz)
+			return value;
+
+		throw new Exception("Attempted to parse non-primitive type");
+	}
+
+	private void printParameters(String usedAlias, Method method) {
+
+		Class<?>[] paramTypes = method.getParameterTypes();
+
+		if (paramTypes.length == 0) {
+
+			out.printf("command <%s> takes no parameters\n", usedAlias);
+
+		} else if (paramTypes.length == 1) {
+
+			if (isStringArray(paramTypes[0])) {
+
+				out.printf("command <%s> takes arbitrary parameters\n", usedAlias);
+
+			} else {
+
+				out.printf("command <%s> takes <%s> parameter\n", usedAlias, paramTypes[0].getName());
+
+			}
+
+		} else {
+
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("command <" + method.getName() + "> takes <");
+
+			sb.append(paramTypes[0].getName());
+
+			int j = paramTypes.length;
+
+			for (int i = 1; i < j - 1; i++) {
+
+				sb.append(", " + paramTypes[i].getName());
+
+			}
+
+			sb.append(", " + paramTypes[j - 1].getName() + "> parameters");
+
+			out.println(sb.toString());
+
+		}
+	}
+
+	@Command(aliases = { ":list", ":l" }, description = "lists available commands")
+	private void listMethods() {
+
+		List<String> resultList = new ArrayList<String>();
+
+		for (MethodData md : availMethods) {
+
+			ArrayList<String> methodNames = getCommandNames(md.method);
+
+			StringBuilder sb = new StringBuilder(methodNames.get(0));
+
+			if (methodNames.size() > 1) {
+
+				sb.append(" (aliases: ");
+
+				int j = methodNames.size() - 1;
+
+				for (int i = 1; i < j; i++) {
+
+					sb.append(methodNames.get(i)).append(", ");
+
+				}
+
+				sb.append(methodNames.get(j)).append(")");
+
+			}
+
+			resultList.add(sb.toString());
+
+		}
+
+		Collections.sort(resultList);
+
+		out.printf("There are %d available commands:\n", resultList.size());
+
+		for (String methodName : resultList) {
+
+			out.println(methodName);
 
 		}
 
@@ -325,235 +600,4 @@ public class Console {
 
 	}
 
-	@Command(aliases = { ":quit", ":q" })
-	public void exitConsole(String[] args) {
-
-		exitFlag = 1;
-
-	}
-
-	/*
-	 * this function returns true when `method` has 1 parameter and of the type
-	 * String[]
-	 */
-	private boolean isMethodGeneric(Method method) {
-
-		@SuppressWarnings("rawtypes")
-		Class[] parameterTypes = method.getParameterTypes();
-
-		if (parameterTypes.length == 1) {
-
-			boolean isArr = parameterTypes[0].isArray();
-
-			boolean isCompString = parameterTypes[0].getComponentType() == String.class;
-
-			return isArr && isCompString;
-
-		} else {
-
-			return false;
-		}
-
-	}
-
-	/*
-	 * return true if command executes successfully and false otherwise
-	 */
-	private boolean smartInvoke(Method method, Object object, String[] args) throws Exception {
-
-		Object[] noargs = new Object[] { new String[] {} };
-
-		int nArgs = args.length;
-
-		Class<?>[] paramTypes = method.getParameterTypes();
-
-		int nMethodArgs = paramTypes.length;
-
-		// determine type of invocation
-
-		if (nMethodArgs == 0) {
-
-			if (nArgs == 0) {
-
-				// simple case, invoke with no parameters
-
-				method.invoke(object);
-
-				return true;
-
-			} else {
-
-				printParameters(method);
-
-				return false;
-
-			}
-
-		} else if (nMethodArgs == 1 && isMethodGeneric(method)) {
-
-			// this method takes one parameter of type String[] that
-			// contains all user parameters
-
-			if (nArgs == 0) {
-
-				// user supplied no parameters
-
-				method.invoke(object, noargs);
-
-				return true;
-
-			} else {
-
-				// user supplied 1+ parameters
-
-				method.invoke(object, new Object[] { args });
-
-				return true;
-
-			}
-
-		} else if (nMethodArgs == nArgs) {
-
-			// the method accepts several parameters, attempt to convert
-			// parameters to the correct types and pass them to the method
-
-			ArrayList<Object> objs = new ArrayList<Object>();
-
-			try {
-
-				for (int i = 0; i < paramTypes.length; i++) {
-
-					objs.add(toObject(paramTypes[i], args[i]));
-
-				}
-
-			} catch (Exception e) {
-
-				out.println("Unable to parse parameters");
-
-				printParameters(method);
-
-				return false;
-
-			}
-
-			Object[] objsArr = objs.toArray();
-
-			method.invoke(object, objsArr);
-
-			return true;
-
-		} else {
-
-			out.printf("command <%s> requires %d parameter(s) (%d supplied)", method.getName(), nMethodArgs, nArgs);
-
-			return false;
-
-		}
-
-	}
-
-	private static Object toObject(@SuppressWarnings("rawtypes") Class clazz, String value) throws Exception {
-
-		if (Boolean.class == clazz || Boolean.TYPE == clazz)
-			return Boolean.parseBoolean(value);
-
-		if (Byte.class == clazz || Byte.TYPE == clazz)
-			return Byte.parseByte(value);
-
-		if (Short.class == clazz || Short.TYPE == clazz)
-			return Short.parseShort(value);
-
-		if (Integer.class == clazz || Integer.TYPE == clazz)
-			return Integer.parseInt(value);
-
-		if (Long.class == clazz || Long.TYPE == clazz)
-			return Long.parseLong(value);
-
-		if (Float.class == clazz || Float.TYPE == clazz)
-			return Float.parseFloat(value);
-
-		if (Double.class == clazz || Double.TYPE == clazz)
-			return Double.parseDouble(value);
-
-		throw new Exception("Attempted to parse non-primitive type");
-	}
-
-	private void printParameters(Method method) {
-
-		Class<?>[] paramTypes = method.getParameterTypes();
-
-		if (paramTypes.length == 0) {
-
-			out.printf("command <%s> takes no parameters\n", method.getName());
-
-		} else if (paramTypes.length == 1) {
-
-			out.printf("command <%s> takes <%s> parameter(s)\n", method.getName(), paramTypes[0].getName());
-
-		} else {
-
-			StringBuilder sb = new StringBuilder();
-
-			sb.append("command <" + method.getName() + "> takes <");
-
-			sb.append(paramTypes[0].getName());
-
-			int j = paramTypes.length;
-
-			for (int i = 1; i < j - 1; i++) {
-
-				sb.append(", " + paramTypes[i].getName());
-
-			}
-
-			sb.append(paramTypes[j].getName() + "> parameters");
-
-			out.println(sb.toString());
-
-		}
-	}
-
-	@Command(aliases = { ":list", ":l" }, description = "lists available commands")
-	private void listMethods(String[] args) {
-
-		List<String> resultList = new ArrayList<String>();
-
-		for (MethodData md : availMethods) {
-
-			ArrayList<String> methodNames = getCommandNames(md.method);
-
-			StringBuilder sb = new StringBuilder(methodNames.get(0));
-
-			if (methodNames.size() > 1) {
-
-				sb.append(" (aliases: ");
-
-				int j = methodNames.size() - 1;
-
-				for (int i = 1; i < j; i++) {
-
-					sb.append(methodNames.get(i)).append(", ");
-
-				}
-
-				sb.append(methodNames.get(j)).append(")");
-
-			}
-
-			resultList.add(sb.toString());
-
-		}
-
-		Collections.sort(resultList);
-
-		out.printf("There are %d available commands:\n", resultList.size());
-
-		for (String methodName : resultList) {
-
-			out.println(methodName);
-
-		}
-
-	}
 }

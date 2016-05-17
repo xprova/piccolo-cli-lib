@@ -65,4 +65,11 @@ public class TestHandler {
 
 	}
 
+	@Command
+	public void concat(String s1, String s2) {
+
+		System.out.println(s1 + s2);
+
+	}
+
 }

@@ -7,7 +7,7 @@ the console.
 
 ## Basic Usage
 
-Create a `DemoHandler` class as below:
+Create a handler class as below:
 
 ```Java
 public class DemoHandler {
@@ -22,11 +22,9 @@ public class DemoHandler {
 }
 ```
 
-Pass an instance of `DemoHandler` to a `Console` object:
+Pass an instance the handler class to a `Console` object:
 
 ```Java
-
-package net.xprova.piccolo;
 
 public static void main(String[] args) {
 
@@ -51,9 +49,10 @@ ______  _                     _
 Type :l for a list of available commands or :q to quit
 
 >> :l
-There are 3 available commands:
+There are 4 available commands:
 :list (aliases: :l)
 :quit (aliases: :q)
+:type (aliases: :t)
 hello
 
 >> hello
@@ -108,9 +107,7 @@ public void sum(String[] args) {
 
 ## @Command Annotations
 
-The `@Command` annotation can be used to
-
-Methods can be renamed using aliases:
+The `@Command` annotation can be used to specify command aliases:
 
 ```Java
 @Command(aliases = { "perf", "compute" })
@@ -126,9 +123,10 @@ name. For the above code:
 
 ```
 >> :l
-There are 3 available commands:
+There are 4 available commands:
 :list (aliases: :l)
 :quit (aliases: :q)
+:type (aliases: :t)
 perf (aliases: compute)
 ```
 
@@ -138,6 +136,7 @@ Piccolo introduces few built-in console commands:
 
 * `:quit` (or `:q`) to exit the console
 * `:list` (or `:l`) to list available commands
+* `:type` (or `:t`) to list command parameters
 
 Built-in commands are also created using `@Command` annotations.
 
