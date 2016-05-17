@@ -35,7 +35,7 @@ public class TestHandler {
 	}
 
 	@Command
-	public void sum(int a, int b) {
+	public void add(int a, int b) {
 
 		System.out.printf("%d + %d = %d\n", a, b, a + b);
 	}
@@ -44,6 +44,25 @@ public class TestHandler {
 	public void not(boolean x) {
 
 		System.out.println(!x);
+	}
+
+	@Command
+	public void sum(String[] args) {
+
+		int total = 0;
+
+		for (String s : args)
+			total = total + Integer.valueOf(s);
+
+		System.out.println(total);
+
+	}
+
+	@Command(aliases = { "perf", "compute" })
+	public void performComplexComputations(String[] args) {
+
+		// do stuff
+
 	}
 
 }

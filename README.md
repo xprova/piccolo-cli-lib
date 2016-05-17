@@ -1,11 +1,11 @@
-### Piccolo CLI Library
+# Piccolo CLI Library
 
 This is a lightweight and friendly library to add a command line interface to
 a Java program. Just provide one or more "handler" classes with public methods
 annotated with `@Command` and the library will allow users to call them from
 the console.
 
-#### Example Usage
+## Basic Usage
 
 Create a `DemoHandler` class as below:
 
@@ -13,7 +13,7 @@ Create a `DemoHandler` class as below:
 public class DemoHandler {
 
 	@Command
-	public static void hello(String[] arr) {
+	public static void hello() {
 
 		System.out.println("Hello World!");
 
@@ -61,3 +61,83 @@ Hello World!
 
 >>
 ```
+
+(:l is an internal command used to list available commands.)
+
+## Command Arguments
+
+Haskell-style arguments can be added after the command name, for example:
+
+```Java
+@Command
+public void add(int a, int b) {
+
+	System.out.printf("%d + %d = %d\n", a, b, a + b);
+
+}
+```
+
+```
+>> add 3 5
+3 + 5 = 8
+```
+
+All primitive data types are supported.
+
+Alternatively, the method can receive an `ArrayList<String>` object containing
+the parameters as in:
+
+```Java
+@Command
+public void sum(String[] args) {
+
+	int total = 0;
+
+	for (String s : args)
+		total = total + Integer.valueOf(s);
+
+	System.out.println(total);
+
+}
+```
+
+```
+>> sum 3 7 18
+28
+```
+
+## @Command Annotations
+
+The `@Command` annotation can be used to
+
+Methods can be renamed using aliases:
+
+```Java
+@Command(aliases = { "perf", "compute" })
+public void performComplexComputations(String[] args) {
+
+	// do stuff
+
+}
+```
+
+When one or more aliases are defined the method cannot be called by its Java
+name. For the above code:
+
+```
+>> :l
+There are 3 available commands:
+:list (aliases: :l)
+:quit (aliases: :q)
+perf (aliases: compute)
+```
+
+## Built-in Commands
+
+Piccolo introduces few built-in console commands:
+
+* `:quit` (or `:q`) to exit the console
+* `:list` (or `:l`) to list available commands
+
+Built-in commands are also created using `@Command` annotations.
+
