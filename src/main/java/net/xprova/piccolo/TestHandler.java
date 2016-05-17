@@ -1,4 +1,4 @@
-package net.xprova.simplecli;
+package net.xprova.piccolo;
 
 public class TestHandler {
 

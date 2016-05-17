@@ -1,4 +1,4 @@
-package net.xprova.simplecli;
+package net.xprova.piccolo;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
