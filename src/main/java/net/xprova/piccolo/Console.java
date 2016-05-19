@@ -1,10 +1,12 @@
 package net.xprova.piccolo;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -164,7 +166,15 @@ public class Console {
 
 			while ((line = console.readLine()) != null) {
 
-				runCommand(line);
+				try {
+
+					runCommand(line);
+
+				} catch (Exception e) {
+
+					e.getCause().printStackTrace();
+
+				}
 
 				if (exitFlag != 0)
 					break;
@@ -197,8 +207,10 @@ public class Console {
 	 *            string containing both command name and arguments, separated
 	 *            by spaces
 	 * @return true if the command runs successfully and false otherwise
+	 * @throws Exception
+	 *             if the command is not found or fails during execution
 	 */
-	public boolean runCommand(String line) {
+	public void runCommand(String line) throws Exception {
 
 		String[] parts = line.split(" ");
 
@@ -206,7 +218,7 @@ public class Console {
 
 		String[] args = Arrays.copyOfRange(parts, 1, parts.length);
 
-		return runCommand(cmd, args);
+		runCommand(cmd, args);
 
 	}
 
@@ -217,15 +229,16 @@ public class Console {
 	 *            command (method) name
 	 * @param args
 	 *            command arguments
-	 * @return true if the command runs successfully and false otherwise
+	 * @throws Exception
+	 *             if the command is not found or fails during execution
 	 */
-	public boolean runCommand(String methodAlias, String args[]) {
+	public void runCommand(String methodAlias, String args[]) throws Exception {
 
 		MethodData methodData = methodAliases.get(methodAlias);
 
 		if (methodData == null) {
 
-			return false;
+			throw new Exception(String.format("Unknown command <%s>", methodAlias));
 
 		} else {
 
@@ -233,17 +246,11 @@ public class Console {
 
 				smartInvoke(methodAlias, methodData.method, methodData.object, args);
 
-				return true;
+			} catch (InvocationTargetException e) {
 
-			} catch (Exception e) {
-
-				System.err.printf("Error while invoking method <%s> ...\n", methodData.method.getName());
-
-				e.printStackTrace();
+				throw new Exception(e.getCause());
 
 			}
-
-			return true;
 
 		}
 
@@ -298,6 +305,28 @@ public class Console {
 
 			return false;
 
+		}
+
+	}
+
+	@Command(aliases = { ":source", ":s" })
+	public void runScript(String scriptFile) throws Exception {
+
+		BufferedReader br = new BufferedReader(new FileReader(scriptFile));
+
+		try {
+
+			String line;
+
+			while ((line = br.readLine()) != null) {
+
+				this.runCommand(line);
+
+			}
+
+		} finally {
+
+			br.close();
 		}
 
 	}
