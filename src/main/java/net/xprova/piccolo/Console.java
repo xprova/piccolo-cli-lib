@@ -1,7 +1,9 @@
 package net.xprova.piccolo;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -263,6 +265,39 @@ public class Console {
 			printParameters(methodAlias, md.method);
 
 			return true;
+		}
+
+	}
+
+	@Command(aliases = { "!" })
+	public boolean runShellCmd(String args[]) {
+
+		String cmd = String.join(" ", args);
+
+		final Runtime rt = Runtime.getRuntime();
+
+		try {
+
+			Process proc = rt.exec(cmd);
+
+			BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+			BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+
+			String s = null;
+
+			while ((s = stdInput.readLine()) != null)
+				out.println(s);
+
+			while ((s = stdError.readLine()) != null)
+				out.println(s);
+
+			return true;
+
+		} catch (IOException e) {
+
+			return false;
+
 		}
 
 	}
