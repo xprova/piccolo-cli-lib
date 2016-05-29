@@ -172,7 +172,7 @@ public class Console {
 
 				} catch (Exception e) {
 
-					e.getCause().printStackTrace();
+					e.printStackTrace();
 
 				}
 
@@ -211,6 +211,9 @@ public class Console {
 	 *             if the command is not found or fails during execution
 	 */
 	public void runCommand(String line) throws Exception {
+
+		if (line.substring(0, 1).equals("#")) // comment
+			return;
 
 		String[] parts = line.split(" ");
 
