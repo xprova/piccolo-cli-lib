@@ -234,6 +234,9 @@ public class Console {
 	 */
 	public void runCommand(String methodAlias, String args[]) throws Exception {
 
+		if (methodAlias.isEmpty() || methodAlias.startsWith("#"))
+			return;
+
 		MethodData methodData = methodAliases.get(methodAlias);
 
 		if (methodData == null) {
@@ -320,7 +323,8 @@ public class Console {
 
 			while ((line = br.readLine()) != null) {
 
-				this.runCommand(line);
+				if (!line.isEmpty())
+					this.runCommand(line);
 
 			}
 
