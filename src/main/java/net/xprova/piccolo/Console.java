@@ -212,9 +212,6 @@ public class Console {
 	 */
 	public void runCommand(String line) throws Exception {
 
-		if (line.substring(0, 1).equals("#")) // comment
-			return;
-
 		String[] parts = line.split(" ");
 
 		String cmd = parts[0];
