@@ -668,4 +668,11 @@ public class Console {
 
 	}
 
+	@Command
+	private void print(String[] args) {
+
+		out.println(String.join(" ", args));
+
+	}
+
 }
