@@ -319,9 +319,11 @@ public class Console {
 
 		try {
 
+			exitFlag = 0;
+
 			String line;
 
-			while ((line = br.readLine()) != null) {
+			while ((line = br.readLine()) != null && exitFlag==0) {
 
 				if (!line.isEmpty())
 					this.runCommand(line);
