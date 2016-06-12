@@ -10,11 +10,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Scanner;
+import java.util.TreeSet;
 
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
@@ -259,7 +258,7 @@ public class Console {
 
 	}
 
-	@Command(aliases = { ":type", ":t" })
+	@Command(aliases = { ":type", ":t" }, description = "print type information for a given command")
 	public boolean getType(String methodAlias) {
 
 		MethodData md = methodAliases.get(methodAlias);
@@ -279,7 +278,7 @@ public class Console {
 
 	}
 
-	@Command(aliases = { "!" })
+	@Command(aliases = { ":shell", ":!" }, description = "run shell command")
 	public boolean runShellCmd(String args[]) {
 
 		String cmd = String.join(" ", args);
@@ -312,7 +311,7 @@ public class Console {
 
 	}
 
-	@Command(aliases = { ":source", ":s" })
+	@Command(aliases = { ":source", ":s" }, description = "run script file")
 	public void runScript(String scriptFile) throws Exception {
 
 		BufferedReader br = new BufferedReader(new FileReader(scriptFile));
@@ -323,7 +322,7 @@ public class Console {
 
 			String line;
 
-			while ((line = br.readLine()) != null && exitFlag==0) {
+			while ((line = br.readLine()) != null && exitFlag == 0) {
 
 				if (!line.isEmpty())
 					this.runCommand(line);
@@ -337,7 +336,7 @@ public class Console {
 
 	}
 
-	@Command(aliases = { ":quit", ":q" })
+	@Command(aliases = { ":quit", ":q" }, description = "exit program")
 	public boolean exitConsole() {
 
 		exitFlag = 1;
@@ -550,43 +549,100 @@ public class Console {
 	@Command(aliases = { ":list", ":l" }, description = "lists available commands")
 	private void listMethods() {
 
-		List<String> resultList = new ArrayList<String>();
+		TreeSet<String> methodList = new TreeSet<String>();
 
 		for (MethodData md : availMethods) {
 
-			ArrayList<String> methodNames = getCommandNames(md.method);
+			Command anot = getCommandAnnotation(md.method);
 
-			StringBuilder sb = new StringBuilder(methodNames.get(0));
+			if (anot.visible()) {
 
-			if (methodNames.size() > 1) {
+				String[] aliases = anot.aliases();
 
-				sb.append(" (aliases: ");
+				String cmd = aliases.length == 0 ? md.method.getName() : aliases[0];
 
-				int j = methodNames.size() - 1;
-
-				for (int i = 1; i < j; i++) {
-
-					sb.append(methodNames.get(i)).append(", ");
-
-				}
-
-				sb.append(methodNames.get(j)).append(")");
+				methodList.add(cmd);
 
 			}
 
-			resultList.add(sb.toString());
+		}
+
+		out.println("Available commands:");
+
+		for (String cmd : methodList) {
+
+			Method m = methodAliases.get(cmd).method;
+
+			String desc = getCommandAnnotation(m).description();
+
+			out.printf("%-20s : %s\n", cmd, desc);
 
 		}
 
-		Collections.sort(resultList);
+	}
 
-		out.printf("There are %d available commands:\n", resultList.size());
+	@Command(aliases = { ":aliases", ":a" }, description = "list command aliases")
+	private void listAliases() {
 
-		for (String methodName : resultList) {
+		TreeSet<String> methodList = new TreeSet<String>();
 
-			out.println(methodName);
+		for (MethodData md : availMethods) {
+
+			Command anot = getCommandAnnotation(md.method);
+
+			if (anot.visible()) {
+
+				String[] aliases = anot.aliases();
+
+				if (aliases.length > 1) {
+
+					String cmd = aliases.length == 0 ? md.method.getName() : aliases[0];
+
+					methodList.add(cmd);
+
+				}
+
+			}
 
 		}
+
+		out.println("Available command aliases:");
+
+		for (String cmd : methodList) {
+
+			Method m = methodAliases.get(cmd).method;
+
+			Command anot = getCommandAnnotation(m);
+
+			String aliases = "";
+
+			if (anot.aliases().length < 2) {
+
+				aliases = "n/a";
+
+			} else {
+
+				aliases = anot.aliases()[1];
+
+				for (int i = 2; i < anot.aliases().length; i++) {
+
+					aliases += ", " + anot.aliases()[i];
+
+				}
+
+			}
+
+			out.printf("%-20s : %s\n", cmd, aliases);
+
+		}
+
+	}
+
+	private Command getCommandAnnotation(Method method) {
+
+		Command[] anots = method.getDeclaredAnnotationsByType(Command.class);
+
+		return anots[0];
 
 	}
 
