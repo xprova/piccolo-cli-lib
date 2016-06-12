@@ -726,7 +726,7 @@ public class Console {
 
 	}
 
-	@Command
+	@Command(aliases = {":print", ":p"}, description = "print a text to the console")
 	private void print(String[] args) {
 
 		out.println(String.join(" ", args));
