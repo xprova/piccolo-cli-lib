@@ -329,6 +329,8 @@ public class Console {
 
 			}
 
+			exitFlag = 0;
+
 		} finally {
 
 			br.close();
