@@ -258,7 +258,7 @@ public class Console {
 
 	}
 
-	@Command(aliases = { ":type", ":t" }, description = "print type information for a given command")
+	@Command(aliases = { ":type" }, description = "print type information for a given command")
 	public boolean getType(String methodAlias) {
 
 		MethodData md = methodAliases.get(methodAlias);
@@ -344,6 +344,22 @@ public class Console {
 		exitFlag = 1;
 
 		return true;
+
+	}
+
+	@Command(aliases = {":time", ":t"}, description = "time the execution of a command")
+	public void timeCommand(String args[]) throws Exception {
+
+		long startTime = System.nanoTime();
+
+		runCommand(String.join(" ", args));
+
+		long endTime = System.nanoTime();
+
+		double searchTime = (endTime - startTime) / 1e9;
+
+		System.out.printf("Completed execution in %f seconds\n", searchTime);
+
 
 	}
 
