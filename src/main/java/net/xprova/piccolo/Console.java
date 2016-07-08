@@ -506,7 +506,7 @@ public class Console {
 
 		} else {
 
-			out.printf("command <%s> requires %d parameter(s) (%d supplied)", method.getName(), nMethodArgs, nArgs);
+			out.printf("command <%s> requires %d parameter(s) (%d supplied)", usedAlias, nMethodArgs, nArgs);
 
 			return false;
 
