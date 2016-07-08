@@ -1,0 +1,24 @@
+#!/bin/bash
+
+PICCOLO_JAR=target/piccolo-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+
+if [ ! -f $PICCOLO_JAR ]
+then
+
+	type mvn >/dev/null 2>&1 || { echo >&2 "maven is not installed"; exit 1; }
+
+	echo "Building Piccolo for first time use ..."
+
+	mvn package > /dev/null
+
+fi
+
+if [ `uname -o` == "Cygwin" ]
+then
+	stty -icanon min 1 -echo
+	java -jar -Djline.terminal=jline.UnixTerminal $PICCOLO_JAR "$@"
+	stty icanon echo
+else
+	java -jar $PICCOLO_JAR "$@"
+fi
+

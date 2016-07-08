@@ -347,7 +347,19 @@ public class Console {
 
 	}
 
-	@Command(aliases = {":time", ":t"}, description = "time the execution of a command")
+	@Command(aliases = { ":help", ":h" }, description = "print help text of a command")
+	public void printHelp(String methodAlias) {
+
+		MethodData md = methodAliases.get(methodAlias);
+
+		Command anot = getCommandAnnotation(md.method);
+
+		for (String s : anot.help())
+			System.out.println(s);
+
+	}
+
+	@Command(aliases = { ":time", ":t" }, description = "time the execution of a command")
 	public void timeCommand(String args[]) throws Exception {
 
 		long startTime = System.nanoTime();
@@ -359,7 +371,6 @@ public class Console {
 		double searchTime = (endTime - startTime) / 1e9;
 
 		System.out.printf("Completed execution in %f seconds\n", searchTime);
-
 
 	}
 
@@ -744,7 +755,7 @@ public class Console {
 
 	}
 
-	@Command(aliases = {":print", ":p"}, description = "print a text to the console")
+	@Command(aliases = { ":print", ":p" }, description = "print a text to the console")
 	private void print(String[] args) {
 
 		out.println(String.join(" ", args));
