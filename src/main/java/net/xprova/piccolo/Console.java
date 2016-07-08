@@ -347,15 +347,26 @@ public class Console {
 
 	}
 
-	@Command(aliases = { ":help", ":h" }, description = "print help text of a command")
+	@Command(aliases = { ":help", ":h" }, description = "print help text of a command", help = { "Uage:",
+			"  :help <command>" })
 	public void printHelp(String methodAlias) {
 
 		MethodData md = methodAliases.get(methodAlias);
 
-		Command anot = getCommandAnnotation(md.method);
+		if (md == null) {
 
-		for (String s : anot.help())
-			System.out.println(s);
+			System.out.println("Unrecognized command");
+
+		} else {
+
+			Command anot = getCommandAnnotation(md.method);
+
+			System.out.printf("%s : %s\n\n", methodAlias, anot.description());
+
+			for (String s : anot.help())
+				System.out.println(s);
+
+		}
 
 	}
 
