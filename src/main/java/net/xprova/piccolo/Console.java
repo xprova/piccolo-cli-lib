@@ -170,24 +170,7 @@ public class Console {
 
 				} catch (Exception e) {
 
-					StackTraceElement[] trace = e.getCause().getStackTrace();
-
-					ArrayList<StackTraceElement> stackArr = new ArrayList<StackTraceElement>();
-
-					for (StackTraceElement s : trace) {
-
-						if (!s.getClassName().contains(".reflect."))
-							stackArr.add(s);
-
-					}
-
-					StackTraceElement[] newTrace = new StackTraceElement[stackArr.size()];
-
-					stackArr.toArray(newTrace);
-
-					e.getCause().setStackTrace(newTrace);
-
-					e.getCause().printStackTrace();
+					prettyPrintStackTrace(e);
 
 				}
 
@@ -213,6 +196,29 @@ public class Console {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private void prettyPrintStackTrace(Exception e) {
+
+		StackTraceElement[] trace = e.getCause().getStackTrace();
+
+		ArrayList<StackTraceElement> stackArr = new ArrayList<StackTraceElement>();
+
+		for (StackTraceElement s : trace) {
+
+			if (!s.getClassName().contains(".reflect."))
+				stackArr.add(s);
+
+		}
+
+		StackTraceElement[] newTrace = new StackTraceElement[stackArr.size()];
+
+		stackArr.toArray(newTrace);
+
+		e.getCause().setStackTrace(newTrace);
+
+		e.getCause().printStackTrace();
+
 	}
 
 	/**
@@ -332,8 +338,21 @@ public class Console {
 
 			while ((line = br.readLine()) != null && exitFlag == 0) {
 
-				if (!line.isEmpty())
-					this.runCommand(line);
+				if (!line.isEmpty()) {
+
+					try {
+
+						this.runCommand(line);
+
+					} catch (Exception e) {
+
+						prettyPrintStackTrace(e);
+
+						return;
+
+					}
+
+				}
 
 			}
 
