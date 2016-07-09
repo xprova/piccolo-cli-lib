@@ -200,7 +200,12 @@ public class Console {
 
 	private void prettyPrintStackTrace(Exception e) {
 
-		StackTraceElement[] trace = e.getCause().getStackTrace();
+		StackTraceElement[] trace;
+
+		if (e.getCause() == null)
+			trace = e.getStackTrace();
+		else
+			trace = e.getCause().getStackTrace();
 
 		ArrayList<StackTraceElement> stackArr = new ArrayList<StackTraceElement>();
 
