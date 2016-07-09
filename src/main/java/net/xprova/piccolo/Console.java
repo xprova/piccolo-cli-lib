@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -171,7 +170,24 @@ public class Console {
 
 				} catch (Exception e) {
 
-					e.printStackTrace();
+					StackTraceElement[] trace = e.getCause().getStackTrace();
+
+					ArrayList<StackTraceElement> stackArr = new ArrayList<StackTraceElement>();
+
+					for (StackTraceElement s : trace) {
+
+						if (!s.getClassName().contains(".reflect."))
+							stackArr.add(s);
+
+					}
+
+					StackTraceElement[] newTrace = new StackTraceElement[stackArr.size()];
+
+					stackArr.toArray(newTrace);
+
+					e.getCause().setStackTrace(newTrace);
+
+					e.getCause().printStackTrace();
 
 				}
 
@@ -244,15 +260,7 @@ public class Console {
 
 		} else {
 
-			try {
-
-				smartInvoke(methodAlias, methodData.method, methodData.object, args);
-
-			} catch (InvocationTargetException e) {
-
-				throw new Exception(e.getCause());
-
-			}
+			smartInvoke(methodAlias, methodData.method, methodData.object, args);
 
 		}
 
