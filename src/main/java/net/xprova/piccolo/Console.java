@@ -220,9 +220,18 @@ public class Console {
 
 		stackArr.toArray(newTrace);
 
-		e.getCause().setStackTrace(newTrace);
+		if (e.getCause() == null) {
 
-		e.getCause().printStackTrace();
+			e.setStackTrace(newTrace);
+
+			e.printStackTrace();
+
+		} else {
+
+			e.getCause().setStackTrace(newTrace);
+
+			e.getCause().printStackTrace();
+		}
 
 	}
 
