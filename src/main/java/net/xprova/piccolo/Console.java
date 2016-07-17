@@ -402,10 +402,16 @@ public class Console {
 
 			Command anot = getCommandAnnotation(md.method);
 
-			System.out.printf("%s : %s\n\n", methodAlias, anot.description());
+			System.out.printf("%s : %s\n", methodAlias, anot.description());
 
-			for (String s : anot.help())
-				System.out.println(s);
+			if (anot.help().length > 0) {
+
+				System.out.println("");
+
+				for (String s : anot.help())
+					System.out.println(s);
+
+			}
 
 		}
 
@@ -547,7 +553,7 @@ public class Console {
 
 		} else {
 
-			out.printf("command <%s> requires %d parameter(s) (%d supplied)", usedAlias, nMethodArgs, nArgs);
+			out.printf("command <%s> requires %d parameter(s) (%d supplied)\n", usedAlias, nMethodArgs, nArgs);
 
 			return false;
 
