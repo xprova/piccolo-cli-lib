@@ -388,7 +388,7 @@ public class Console {
 
 	}
 
-	@Command(aliases = { ":help", ":h" }, description = "print help text of a command", help = { "Uage:",
+	@Command(aliases = { ":help", ":h" }, description = "print help text of a command", help = { "Usage:",
 			"  :help <command>" })
 	public void printHelp(String methodAlias) {
 
