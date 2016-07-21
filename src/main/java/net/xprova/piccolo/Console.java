@@ -350,7 +350,16 @@ public class Console {
 
 			String line;
 
-			while ((line = br.readLine()) != null && exitFlag == 0) {
+			int lineCount = 0;
+
+			while (exitFlag == 0) {
+
+				line = br.readLine();
+
+				lineCount++;
+
+				if (line == null)
+					break;
 
 				if (!line.isEmpty()) {
 
@@ -359,6 +368,8 @@ public class Console {
 						this.runCommand(line);
 
 					} catch (Exception e) {
+
+						System.err.printf("Error on line %d of %s\n", lineCount, scriptFile);
 
 						prettyPrintStackTrace(e);
 
